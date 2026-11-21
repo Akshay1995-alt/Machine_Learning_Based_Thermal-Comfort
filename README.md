@@ -1,110 +1,41 @@
-# ASHRAE Thermal Comfort ML (Phase 1)
+# ASHRAE Thermal Comfort Machine Learning
 
-This project builds a 3-class thermal sensation classifier from ASHRAE Thermal Comfort Database II style data.
+This repository contains two sequential projects using the ASHRAE Global
+Thermal Comfort Database II. Project 1 is the current focus; Project 2 starts
+only after Project 1 is complete and begins again from the original CSV files.
 
-## Phase 1 scope
-- Task: classification (`cold`, `neutral`, `hot`)
-- Models: Logistic Regression, Random Forest, XGBoost (if available)
-- Metrics: Macro F1, per-class precision/recall/F1, confusion matrices
-- Benchmark: PMV-threshold baseline comparison (if PMV column exists)
-- Day-by-day learning guide: [DAYWISE_PLAN.md](DAYWISE_PLAN.md)
+## Project 1: Thermal sensation
 
-## Folder layout
-```text
-ashrae-thermal-comfort-ml/
-├─ data/
-│  ├─ raw/
-│  ├─ interim/
-│  └─ processed/
-├─ models/
-├─ notebooks/
-├─ reports/
-│  └─ figures/
-├─ src/
-│  └─ ashrae_ml/
-└─ README.md
-```
+The first project predicts the numeric `thermal_sensation` vote from
+environmental and building-context features. The database includes fractional
+votes, so the primary task preserves the recorded values and uses regression.
+The analysis is global rather than limited to one country.
+
+Follow the beginner-friendly workflow in [DAYWISE_PLAN.md](DAYWISE_PLAN.md)
+and work through the notebooks in [notebooks/README.md](notebooks/README.md).
+
+## Data
+
+Place the two original database CSV files in `data/raw/` as described in the
+notebooks. Do not modify the source files or commit the dataset; it is not
+included in this repository update.
 
 ## Setup
-From [Machine_Learning_Projects](C:/Akshay/Machine_Learning_Projects):
+
+From the repository root, install the packages with:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-cd .\ashrae-thermal-comfort-ml
-pip install -r requirements.txt
-pip install -e .
+python -m pip install -r requirements.txt
 ```
 
-## Expected dataset columns
-Core features:
-- `ta` (air temperature)
-- `rh` (relative humidity)
-- `vel` (air velocity)
-- `tr` (mean radiant temperature)
-- `clo` (clothing insulation)
-- `met` (metabolic rate)
+Open the notebooks in VS Code or Jupyter using the same Python environment.
+The notebooks expect the project data and generated files to remain in the
+repository's `data/` folders.
 
-Target:
-- `tsv` thermal sensation vote in `[-3, 3]`
+## Important limitations
 
-Optional PMV benchmark column:
-- `pmv` (default name, configurable)
-
-## Class mapping used
-- `cold`: TSV <= -1
-- `neutral`: -0.5 <= TSV <= 0.5
-- `hot`: TSV >= 1
-
-Rows in transition bands `(-1, -0.5)` and `(0.5, 1)` are dropped from supervised training/evaluation.
-
-## Data quality rules
-- Keep only physically plausible ranges:
-  - `met` in [0.5, 4.0]
-  - `clo` in [0.0, 3.0]
-  - `rh` in [0, 100]
-  - `vel` in [0.0, 3.0]
-  - `ta` in [0, 50]
-  - `tr` in [0, 50]
-- Missing `tr` handling:
-  1) Domain-informed fallback: if `tr` missing and `ta` present, set `tr = ta`
-  2) Median imputation for remaining missing values
-
-## Run training
-```powershell
-python -m ashrae_ml.train --data .\data\raw\ashrae_db2.csv --target-col tsv --pmv-col pmv
-```
-
-Outputs:
-- `models/*.pkl`: trained pipelines
-- `reports/metrics_summary.csv`: model metrics
-- `reports/confusion_matrix_*.csv`
-- `reports/classification_report_*.csv`
-- `reports/pmv_baseline_metrics.csv` (if PMV column available)
-
-## Run starter EDA
-```powershell
-python -m ashrae_ml.eda --data .\data\raw\ashrae_db2.csv --target-col tsv
-```
-
-Outputs:
-- `reports/figures/class_balance.png`
-- `reports/figures/ta_rh_scatter_by_class.png`
-
-## Interpretability
-```powershell
-python -m ashrae_ml.interpret --data .\data\raw\ashrae_db2.csv --model-path .\models\random_forest.pkl
-```
-
-Outputs:
-- `reports/feature_importance.csv`
-- `reports/shap_summary.csv` (for tree-compatible models when SHAP succeeds)
-
-## Hyperparameter tuning (Random Forest)
-```powershell
-python -m ashrae_ml.tune --data .\data\raw\ashrae_db2.csv
-```
-
-Outputs:
-- `reports/rf_gridsearch_results.csv`
-- `models/random_forest_tuned.pkl`
-
+The database contains observational measurements and occupant votes. Model
+predictions and feature explanations describe associations; they do not prove
+that changing a setpoint or fan speed causes a comfort outcome. These
+notebooks do not measure HVAC energy use and should not be used to claim
+measured energy savings.
